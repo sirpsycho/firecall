@@ -4,7 +4,7 @@ Automate SSH communication with firewalls, switches, etc.
 
 # Description
 
-These scripts are designed to automate sending commands to a Cisco ASA firewall.  The "blockip.py" script is designed to quickly block an IP address by simply providing the IP address (Usage: python blockip.py <ip-address>)
+These scripts are designed to automate sending commands to a Cisco ASA firewall.  The "blockip.py" script is designed to quickly block an IP address by simply providing the IP address (Usage: `python blockip.py <ip-address>`)
 
 NOTE:  Before running "blockip.py", open it in a text editor and enter a valid server address and username.
 
