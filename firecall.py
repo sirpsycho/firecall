@@ -24,6 +24,11 @@ parser.add_option('-p', '--pass',
                   default="",
                   help='SSH password (leave blank to be prompted)',
                  )
+parser.add_option('-k', '--key',
+                  dest="sshkey",
+                  default="",
+                  help='SSH private key location (ex. /home/user/.ssh/id_rsa)',
+                 )
 parser.add_option('-s', '--server',
                   dest="server",
                   default="",
@@ -50,6 +55,7 @@ options, remainder = parser.parse_args()
 
 username = options.username
 password = options.password
+sshkey = options.sshkey
 server = options.server
 try:
     port = int(options.port)
@@ -72,7 +78,7 @@ def exec_cmd(shell, cmd):
     output = shell.recv(65535)
     return output
 
-def main(username, password, server, port, cmdstring):
+def main(username, password, sshkey, server, port, cmdstring):
     if cmdstring == "":
         print("[!] Provide command(s) to run with -c option")
         sys.exit()
@@ -82,14 +88,23 @@ def main(username, password, server, port, cmdstring):
     if username == "":
         username = raw_input('Enter SSH username: ')
         if username == "": sys.exit()
-    if password == "":
-        password = getpass.getpass('(%s@%s) Enter password: ' % (username, server))
+    if sshkey == "":
+        usekey = False
+        if password == "":
+            password = getpass.getpass('(%s@%s) Enter password: ' % (username, server))
+    else:
+        usekey = True
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     try:
-        ssh.connect(server, port=port, username=username, password=password, look_for_keys=False, allow_agent=False)
+        if usekey:
+            # Using SSH key
+            ssh.connect(server, port=port, username=username, key_filename=sshkey, look_for_keys=False, allow_agent=False)
+        else:
+            # Using SSH password
+            ssh.connect(server, port=port, username=username, password=password, look_for_keys=False, allow_agent=False)
         if debug: print("[-] Connected to '%s'" % server)
     except paramiko.ssh_exception.AuthenticationException:
         print("[!] Error: Username or password incorrect")
@@ -106,7 +121,7 @@ def main(username, password, server, port, cmdstring):
     return output
 
 if __name__ == '__main__':
-    output = main(username, password, server, port, cmdstring)
+    output = main(username, password, sshkey, server, port, cmdstring)
     print(output)
 
 

@@ -20,6 +20,10 @@ username = "admin"
 password = ""
 
 
+# (OPTIONAL) Enter SSH private key path (if public key authentication is set up) ex. "/home/user/.ssh/id_rsa"
+sshkey = ""
+
+
 # Name of the group within the firewall that the IP will be added to (to block an IP, this group should already be 
 #  defined in the FW and set up in an ACL to be blocked)
 firewallGroupName = "Deny_All_Group"
@@ -48,7 +52,7 @@ def printhelp():
 
 def alreadyBlocked(ip):
     cmdstring = "sh run object-group id %s" % firewallGroupName
-    output = firecall.main(username, password, server, port, cmdstring)
+    output = firecall.main(username, password, sshkey, server, port, cmdstring)
     if "AUTOADD_%s_" % ip in output:
         return True
     else:
@@ -66,10 +70,10 @@ def removeip():
 object-group network Deny_All_Group
 no network-object object %s
 no object network $s""" % (objname, objname)
-    firecall.main(username, password, server, port, cmdstring)
+    firecall.main(username, password, sshkey, server, port, cmdstring)
 
 def addip():
-    desc = "Automatically added via script on %s" % today
+    desc = "Added by '%s' via script on %s" % (username, today)
     cmdstring = """configure terminal
 object network %s
 host %s
@@ -77,7 +81,7 @@ description %s
 object-group network %s
 network-object object %s
 write mem""" % (objname, blockip, desc, firewallGroupName, objname)
-    firecall.main(username, password, server, port, cmdstring)
+    firecall.main(username, password, sshkey, server, port, cmdstring)
 
 
 if not len(sys.argv) == 2:
@@ -87,8 +91,9 @@ if not len(sys.argv) == 2:
 if server == "" or username == "" or firewallGroupName == "":
     print("[!] Open this script in a text editor and enter an applicable SSH server address, user and firewall group name.")
     sys.exit()
-if password == "":
-    password = getpass.getpass('(%s@%s) Enter password: ' % (username, server))
+if sshkey == "":
+    if password == "":
+        password = getpass.getpass('(%s@%s) Enter password: ' % (username, server))
 
 
 today = datetime.date.today()
@@ -106,7 +111,4 @@ else:
     print("[-] Adding IP '%s' to '%s'..." % (blockip, firewallGroupName))
     addip()
     print("[-] Done")
-
-
-
 
