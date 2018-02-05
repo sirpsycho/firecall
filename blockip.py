@@ -33,6 +33,9 @@ firewallGroupName = "Deny_All_Group"
 port = 22
 
 
+# Log file location (leave blank to disable logging)
+logfile = ""
+
 
 
 
@@ -42,6 +45,7 @@ port = 22
 
 import firecall
 import sys
+import os
 import datetime
 import socket
 import getpass
@@ -49,6 +53,14 @@ import getpass
 
 def printhelp():
     print("Usage: python blockip.py <ip-address>\n\nEnter an IP to block on a firewall.  Before running, edit this script and enter a server address and username.\n")
+
+def format_date(date):
+    return date.strftime('%m-%d-%Y %H:%M:%S UTC')
+
+def write_log(line):
+    if logging:
+        with open(logfile, 'a') as f:
+            f.write("%s %s\n" % (format_date(datetime.datetime.now()), line))
 
 def alreadyBlocked(ip):
     cmdstring = "sh run object-group id %s" % firewallGroupName
@@ -84,6 +96,16 @@ write mem""" % (objname, blockip, desc, firewallGroupName, objname)
     firecall.main(username, password, sshkey, server, port, cmdstring)
 
 
+logging = False if logfile == "" else True
+if logging:
+    if not os.path.isfile(logfile):
+        try:
+            write_log("Created log file")
+        except:
+            print("[!] Error - Could not create log file at '%s'" % logfile)
+            raise
+            sys.exit()
+
 if not len(sys.argv) == 2:
     printhelp()
     sys.exit()
@@ -102,13 +124,22 @@ if blockip == "-h" or blockip == "--help":
     printhelp()
 elif not isip(blockip):
     print("[!] Error - invalid IP address '%s'" % blockip)
+    write_log("Error - Invalid IP address '%s'" % blockip)
     sys.exit()
 objname = "AUTOADD_%s_%s" % (blockip, today)
 
 if alreadyBlocked(blockip):
     print("[-] IP '%s' is already in group '%s'. No actions taken." % (blockip, firewallGroupName))
+    write_log("IP '%s' is already in group '%s'. No actions taken." % (blockip, firewallGroupName))
 else:
     print("[-] Adding IP '%s' to '%s'..." % (blockip, firewallGroupName))
     addip()
     print("[-] Done")
+    write_log("Added IP '%s' to firewall group '%s'" % (blockip, firewallGroupName))
+
+
+
+
+
+
 
