@@ -1,58 +1,39 @@
 #!/usr/bin/python
 
-
-########################################
-##                                    ##
-##  CONFIGURE THE FOLLOWING OPTIONS:  ##
-##                                    ##
-########################################
-
-
-# Enter SSH server IP or hostname ("192.168.0.1", "switch01", etc.)
-server = ""
-
-
-# Enter SSH username ("admin", "cisco", etc.)
-username = "admin"
-
-
-# (OPTIONAL) Enter SSH password (leave blank to be prompted when you run the script)
-password = ""
-
-
-# (OPTIONAL) Enter SSH private key path (if public key authentication is set up) ex. "/home/user/.ssh/id_rsa"
-sshkey = ""
-
-
-# Name of the group within the firewall that the IP will be added to (to block an IP, this group should already be 
-#  defined in the FW and set up in an ACL to be blocked)
-firewallGroupName = "Deny_All_Group"
-
-
-# Enter SSH port (default 22)
-port = 22
-
-
-# Log file location (leave blank to disable logging)
-logfile = ""
-
-
-
-
-
-
-
-
 import firecall
 import sys
 import os
+import re
 import datetime
 import socket
 import getpass
 
 
 def printhelp():
-    print("Usage: python blockip.py <ip-address>\n\nEnter an IP to block on a firewall.  Before running, edit this script and enter a server address and username.\n")
+    print("Usage: python blockip.py <ip-address>\n\nEnter an IP to block on a firewall.  Before running, make sure to edit & configure 'blockip.conf.'\n")
+
+def get_config_path():
+    scriptdir = os.path.dirname(os.path.realpath(__file__))
+    path = scriptdir + "/blockip.conf"
+    if os.path.isfile(path):
+        return path
+    else:
+        print("\033[91m[!]\033[0m ERROR could not find configuration file in %s" % scriptdir)
+        sys.exit()
+
+def read_config(path, param):
+    fileopen = open(path, "r")
+    for line in fileopen:
+        if not line.startswith("#"):
+            match = re.search(param + "=", line)
+            if match:
+                line = line.rstrip()
+                line = line.replace('"', "")
+                line = line.replace(' ', "")
+                line = line.split(param + "=")
+                return line[1]
+    print("\033[91m[!]\033[0m ERROR - %s not found in %s" % (param, path))
+    sys.exit()
 
 def format_date(date):
     return date.strftime('%m-%d-%Y %H:%M:%S UTC')
@@ -95,6 +76,16 @@ network-object object %s
 write mem""" % (objname, blockip, desc, firewallGroupName, objname)
     firecall.main(username, password, sshkey, server, port, cmdstring)
 
+path = get_config_path()
+server = read_config(path, "SERVER")
+username = read_config(path, "SSH_USERNAME")
+password = read_config(path, "SSH_PASSWORD")
+sshkey = read_config(path, "SSH_KEY")
+port = read_config(path, "SSH_PORT")
+fwgroup = read_config(path, "FIREWALL_GROUP_NAME")
+whitelistips = read_config(path, "WHITELIST_IPS")
+logfile = read_config(path, "LOG_FILE")
+
 
 logging = False if logfile == "" else True
 if logging:
@@ -110,13 +101,15 @@ if not len(sys.argv) == 2:
     printhelp()
     sys.exit()
 
-if server == "" or username == "" or firewallGroupName == "":
-    print("[!] Open this script in a text editor and enter an applicable SSH server address, user and firewall group name.")
+if not server or not username or not fwgroup:
+    print("[!] Open 'blockip.conf' in a text editor and enter an applicable SSH server address, username, and firewall group name.")
     sys.exit()
 if sshkey == "":
     if password == "":
         password = getpass.getpass('(%s@%s) Enter password: ' % (username, server))
-
+whitelist = []
+if whitelistips:
+    whitelist = whitelistips.split(',')
 
 today = datetime.date.today()
 blockip = sys.argv[1]
@@ -125,6 +118,13 @@ if blockip == "-h" or blockip == "--help":
 elif not isip(blockip):
     print("[!] Error - invalid IP address '%s'" % blockip)
     write_log("Error - Invalid IP address '%s'" % blockip)
+    sys.exit()
+elif blockip in whitelist:
+    print("[!] IP '%s' is whitelisted in blockip.conf. No actions taken." % blockip)
+    write_log("IP '%s' is whitelisted in blockip.conf. No actions taken." % blockip)
+    sys.exit()
+else:
+    print("TEST - blocking ip.........jk")
     sys.exit()
 objname = "AUTOADD_%s_%s" % (blockip, today)
 
@@ -136,10 +136,5 @@ else:
     addip()
     print("[-] Done")
     write_log("Added IP '%s' to firewall group '%s'" % (blockip, firewallGroupName))
-
-
-
-
-
 
 
