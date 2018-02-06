@@ -51,7 +51,7 @@ def set_global_vars():
     today = datetime.date.today()
 
 def format_date(date):
-    return date.strftime('%m-%d-%Y %H:%M:%S UTC')
+    return date.strftime('%m-%d-%Y %H:%M:%S')
 
 def write_log(line):
     if logging:
