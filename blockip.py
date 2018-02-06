@@ -35,6 +35,21 @@ def read_config(path, param):
     print("\033[91m[!]\033[0m ERROR - %s not found in %s" % (param, path))
     sys.exit()
 
+def set_global_vars():
+    global path, server, username, password, sshkey, port, fwgroup, whitelistips, logfile, logging, today
+
+    path = get_config_path()
+    server = read_config(path, "SERVER")
+    username = read_config(path, "SSH_USERNAME")
+    password = read_config(path, "SSH_PASSWORD")
+    sshkey = read_config(path, "SSH_KEY")
+    port = read_config(path, "SSH_PORT")
+    fwgroup = read_config(path, "FIREWALL_GROUP_NAME")
+    whitelistips = read_config(path, "WHITELIST_IPS")
+    logfile = read_config(path, "LOG_FILE")
+    logging = False if logfile == "" else True
+    today = datetime.date.today()
+
 def format_date(date):
     return date.strftime('%m-%d-%Y %H:%M:%S UTC')
 
@@ -58,14 +73,16 @@ def isip(ip):
     except socket.error:
         return False
 
-def removeip():
+def removeip(blockip):
+    objname = "AUTOADD_%s_%s" % (blockip, today)
     cmdstring = """configure terminal
 object-group network Deny_All_Group
 no network-object object %s
 no object network $s""" % (objname, objname)
     firecall.main(username, password, sshkey, server, port, cmdstring)
 
-def addip():
+def addip(blockip):
+    objname = "AUTOADD_%s_%s" % (blockip, today)
     desc = "Added by '%s' via script on %s" % (username, today)
     cmdstring = """configure terminal
 object network %s
@@ -76,62 +93,50 @@ network-object object %s
 write mem""" % (objname, blockip, desc, fwgroup, objname)
     firecall.main(username, password, sshkey, server, port, cmdstring)
 
-path = get_config_path()
-server = read_config(path, "SERVER")
-username = read_config(path, "SSH_USERNAME")
-password = read_config(path, "SSH_PASSWORD")
-sshkey = read_config(path, "SSH_KEY")
-port = read_config(path, "SSH_PORT")
-fwgroup = read_config(path, "FIREWALL_GROUP_NAME")
-whitelistips = read_config(path, "WHITELIST_IPS")
-logfile = read_config(path, "LOG_FILE")
+def main(blockip):
+    set_global_vars()
+    if logging:
+        if not os.path.isfile(logfile):
+            try:
+                write_log("Created log file")
+            except:
+                print("[!] Error - Could not create log file at '%s'" % logfile)
+                raise
+                sys.exit()
+
+    if not server or not username or not fwgroup:
+        print("[!] Open 'blockip.conf' in a text editor and enter an applicable SSH server address, username, and firewall group name.")
+        sys.exit()
+    if sshkey == "":
+        if password == "":
+            password = getpass.getpass('(%s@%s) Enter password: ' % (username, server))
+    whitelist = []
+    if whitelistips:
+        whitelist = whitelistips.split(',')
+    if blockip == "-h" or blockip == "--help":
+        printhelp()
+    elif not isip(blockip):
+        print("[!] Error - invalid IP address '%s'" % blockip)
+        write_log("Error - Invalid IP address '%s'" % blockip)
+        sys.exit()
+    elif blockip in whitelist:
+        print("[!] IP '%s' is whitelisted in blockip.conf. No actions taken." % blockip)
+        write_log("IP '%s' is whitelisted in blockip.conf. No actions taken." % blockip)
+        sys.exit()
+    objname = "AUTOADD_%s_%s" % (blockip, today)
+
+    if alreadyBlocked(blockip):
+        print("[-] IP '%s' is already in group '%s'. No actions taken." % (blockip, fwgroup))
+        write_log("IP '%s' is already in group '%s'. No actions taken." % (blockip, fwgroup))
+    else:
+        addip(blockip)
+        print("[-] Added IP '%s' to firewall group '%s'" % (blockip, fwgroup))
+        write_log("Added IP '%s' to firewall group '%s'" % (blockip, fwgroup))
 
 
-logging = False if logfile == "" else True
-if logging:
-    if not os.path.isfile(logfile):
-        try:
-            write_log("Created log file")
-        except:
-            print("[!] Error - Could not create log file at '%s'" % logfile)
-            raise
-            sys.exit()
-
-if not len(sys.argv) == 2:
-    printhelp()
-    sys.exit()
-
-if not server or not username or not fwgroup:
-    print("[!] Open 'blockip.conf' in a text editor and enter an applicable SSH server address, username, and firewall group name.")
-    sys.exit()
-if sshkey == "":
-    if password == "":
-        password = getpass.getpass('(%s@%s) Enter password: ' % (username, server))
-whitelist = []
-if whitelistips:
-    whitelist = whitelistips.split(',')
-
-today = datetime.date.today()
-blockip = sys.argv[1]
-if blockip == "-h" or blockip == "--help":
-    printhelp()
-elif not isip(blockip):
-    print("[!] Error - invalid IP address '%s'" % blockip)
-    write_log("Error - Invalid IP address '%s'" % blockip)
-    sys.exit()
-elif blockip in whitelist:
-    print("[!] IP '%s' is whitelisted in blockip.conf. No actions taken." % blockip)
-    write_log("IP '%s' is whitelisted in blockip.conf. No actions taken." % blockip)
-    sys.exit()
-objname = "AUTOADD_%s_%s" % (blockip, today)
-
-if alreadyBlocked(blockip):
-    print("[-] IP '%s' is already in group '%s'. No actions taken." % (blockip, fwgroup))
-    write_log("IP '%s' is already in group '%s'. No actions taken." % (blockip, fwgroup))
-else:
-    print("[-] Adding IP '%s' to '%s'..." % (blockip, fwgroup))
-    addip()
-    print("[-] Done")
-    write_log("Added IP '%s' to firewall group '%s'" % (blockip, fwgroup))
-
-
+if __name__ == '__main__':
+    if not len(sys.argv) == 2:
+        printhelp()
+        sys.exit()
+    blockip = sys.argv[1]
+    main(blockip)
