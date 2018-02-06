@@ -44,7 +44,7 @@ def write_log(line):
             f.write("%s %s\n" % (format_date(datetime.datetime.now()), line))
 
 def alreadyBlocked(ip):
-    cmdstring = "sh run object-group id %s" % firewallGroupName
+    cmdstring = "sh run object-group id %s" % fwgroup
     output = firecall.main(username, password, sshkey, server, port, cmdstring)
     if "AUTOADD_%s_" % ip in output:
         return True
@@ -73,7 +73,7 @@ host %s
 description %s
 object-group network %s
 network-object object %s
-write mem""" % (objname, blockip, desc, firewallGroupName, objname)
+write mem""" % (objname, blockip, desc, fwgroup, objname)
     firecall.main(username, password, sshkey, server, port, cmdstring)
 
 path = get_config_path()
@@ -123,18 +123,15 @@ elif blockip in whitelist:
     print("[!] IP '%s' is whitelisted in blockip.conf. No actions taken." % blockip)
     write_log("IP '%s' is whitelisted in blockip.conf. No actions taken." % blockip)
     sys.exit()
-else:
-    print("TEST - blocking ip.........jk")
-    sys.exit()
 objname = "AUTOADD_%s_%s" % (blockip, today)
 
 if alreadyBlocked(blockip):
-    print("[-] IP '%s' is already in group '%s'. No actions taken." % (blockip, firewallGroupName))
-    write_log("IP '%s' is already in group '%s'. No actions taken." % (blockip, firewallGroupName))
+    print("[-] IP '%s' is already in group '%s'. No actions taken." % (blockip, fwgroup))
+    write_log("IP '%s' is already in group '%s'. No actions taken." % (blockip, fwgroup))
 else:
-    print("[-] Adding IP '%s' to '%s'..." % (blockip, firewallGroupName))
+    print("[-] Adding IP '%s' to '%s'..." % (blockip, fwgroup))
     addip()
     print("[-] Done")
-    write_log("Added IP '%s' to firewall group '%s'" % (blockip, firewallGroupName))
+    write_log("Added IP '%s' to firewall group '%s'" % (blockip, fwgroup))
 
 
