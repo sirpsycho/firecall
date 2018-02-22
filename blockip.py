@@ -36,16 +36,17 @@ def read_config(path, param):
     sys.exit()
 
 def set_global_vars():
-    global path, server, username, password, sshkey, port, fwgroup, whitelistips, logfile, logging, today
+    global path, serverlist, username, sshpass, sshkey, port, fwgroup, whitelist, logfile, logging, today
 
     path = get_config_path()
-    server = read_config(path, "SERVER")
+
+    serverlist = read_config(path, "SERVER_LIST").split(',')
     username = read_config(path, "SSH_USERNAME")
-    password = read_config(path, "SSH_PASSWORD")
+    sshpass = read_config(path, "SSH_PASSWORD")
     sshkey = read_config(path, "SSH_KEY")
     port = read_config(path, "SSH_PORT")
     fwgroup = read_config(path, "FIREWALL_GROUP_NAME")
-    whitelistips = read_config(path, "WHITELIST_IPS")
+    whitelist = read_config(path, "WHITELIST_IPS").split(',')
     logfile = read_config(path, "LOG_FILE")
     logging = False if logfile == "" else True
     today = datetime.date.today()
@@ -58,9 +59,9 @@ def write_log(line):
         with open(logfile, 'a') as f:
             f.write("%s %s\n" % (format_date(datetime.datetime.now()), line))
 
-def alreadyBlocked(ip):
+def alreadyBlocked(ip, server):
     cmdstring = "sh run object-group id %s" % fwgroup
-    output = firecall.main(username, password, sshkey, server, port, cmdstring)
+    output, errmsg = firecall.main(username, sshpass, sshkey, server, port, cmdstring)
     if "AUTOADD_%s_" % ip in output:
         return True
     else:
@@ -73,15 +74,15 @@ def isip(ip):
     except socket.error:
         return False
 
-def removeip(blockip):
+def removeip(blockip, server):
     objname = "AUTOADD_%s_%s" % (blockip, today)
     cmdstring = """configure terminal
 object-group network Deny_All_Group
 no network-object object %s
 no object network $s""" % (objname, objname)
-    firecall.main(username, password, sshkey, server, port, cmdstring)
+    return firecall.main(username, sshpass, sshkey, server, port, cmdstring)
 
-def addip(blockip):
+def addip(blockip, server):
     objname = "AUTOADD_%s_%s" % (blockip, today)
     desc = "Added by '%s' via script on %s" % (username, today)
     cmdstring = """configure terminal
@@ -91,7 +92,7 @@ description %s
 object-group network %s
 network-object object %s
 write mem""" % (objname, blockip, desc, fwgroup, objname)
-    firecall.main(username, password, sshkey, server, port, cmdstring)
+    return firecall.main(username, sshpass, sshkey, server, port, cmdstring)
 
 def main(blockip):
     set_global_vars()
@@ -104,15 +105,16 @@ def main(blockip):
                 raise
                 sys.exit()
 
-    if not server or not username or not fwgroup:
+    if not serverlist or not username or not fwgroup:
         print("[!] Open 'blockip.conf' in a text editor and enter an applicable SSH server address, username, and firewall group name.")
         sys.exit()
     if sshkey == "":
-        if password == "":
-            password = getpass.getpass('(%s@%s) Enter password: ' % (username, server))
-    whitelist = []
-    if whitelistips:
-        whitelist = whitelistips.split(',')
+        global sshpass
+        if sshpass == "":
+            try:
+                sshpass = getpass.getpass('Enter password for user "%s": ' % username)
+            except KeyboardInterrupt:
+                sys.exit()
     if blockip == "-h" or blockip == "--help":
         printhelp()
     elif not isip(blockip):
@@ -125,14 +127,22 @@ def main(blockip):
         sys.exit()
     objname = "AUTOADD_%s_%s" % (blockip, today)
 
-    if alreadyBlocked(blockip):
-        print("[-] IP '%s' is already in group '%s'. No actions taken." % (blockip, fwgroup))
-        write_log("IP '%s' is already in group '%s'. No actions taken." % (blockip, fwgroup))
-    else:
-        addip(blockip)
-        print("[-] Added IP '%s' to firewall group '%s'" % (blockip, fwgroup))
-        write_log("Added IP '%s' to firewall group '%s'" % (blockip, fwgroup))
-
+    for server in serverlist:
+        if alreadyBlocked(blockip, server):
+            print("[-] (%s) IP '%s' is already in group '%s'. No actions taken." % (server, blockip, fwgroup))
+            write_log("(%s) IP '%s' is already in group '%s'. No actions taken." % (server, blockip, fwgroup))
+        else:
+            output, errmsg = addip(blockip, server)
+#            print(output)
+            if errmsg:
+                print("[!] (%s) Error: %s" % (server, errmsg))
+                write_log("(%s) Error: %s" % (server, errmsg))
+            elif "Cryptochecksum" in output:
+                print("[-] (%s) Added IP '%s' to firewall group '%s'" % (server, blockip, fwgroup))
+                write_log("(%s) Added IP '%s' to firewall group '%s'" % (server, blockip, fwgroup))
+            else:
+                print("[!] (%s) Error: Connection successful, but an error occurred when running commands" % server)
+                write_log("(%s) Error: Connection successful, but an error occurred when running commands" % server)
 
 if __name__ == '__main__':
     if not len(sys.argv) == 2:

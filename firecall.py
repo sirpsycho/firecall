@@ -107,8 +107,11 @@ def main(username, password, sshkey, server, port, cmdstring):
             ssh.connect(server, port=port, username=username, password=password, look_for_keys=False, allow_agent=False)
         if debug: print("[-] Connected to '%s'" % server)
     except paramiko.ssh_exception.AuthenticationException:
-        print("[!] Error: Username or password incorrect")
-        sys.exit()
+        errmsg = "Username or password incorrect on '%s'" % server
+        return "", errmsg
+    except paramiko.ssh_exception.NoValidConnectionsError:
+        errmsg = "Unable to connect to '%s' on port '%s'" % (server, port)
+        return "", errmsg
 
     sshshell = ssh.invoke_shell()
     sleep(0.5)
@@ -118,15 +121,11 @@ def main(username, password, sshkey, server, port, cmdstring):
 
     if debug: print("[-] Sending command string...\n")
     output = exec_cmd(sshshell, cmdstring)
-    return output
+    return output, ""
 
 if __name__ == '__main__':
-    output = main(username, password, sshkey, server, port, cmdstring)
-    print(output)
-
-
-
-
-
-
-
+    output, errmsg = main(username, password, sshkey, server, port, cmdstring)
+    if errmsg:
+        print("-%s-" % errmsg)
+    else:
+        print(output)
