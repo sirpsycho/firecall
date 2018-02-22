@@ -9,7 +9,9 @@ These scripts are designed to automate sending commands to a Cisco ASA firewall.
 
 # Configuration
 
-The "blockip.py" script is designed to quickly block a host by simply providing the IP address (Usage: `python blockip.py <ip-address>`).  Before running "blockip.py", open it in a text editor and enter a valid server address (the firewall IP) and username.  Optionally, to further simplify blocking an IP, you can create an alias:
+The "blockip.py" script is designed to quickly block a host by simply providing the IP address (Usage: `python blockip.py <ip-address>`). 
+
+Before running "blockip.py", open "blockip.conf" in a text editor and enter one or more firewall IP addresses next to "SERVER_LIST" as well as a username, and any other configurations.  Optionally, to further simplify blocking an IP, you can create an alias:
 
 `echo 'alias blockip="python /full/path/to/blockip.py"' >> ~/.bashrc`
 
@@ -18,9 +20,8 @@ This way, you can just type `blockip` and then the ip address that you want to b
 Example usage:
 ```
 # blockip 12.34.56.78
-(admin@firewall) Enter password: 
-[-] Adding IP '12.34.56.78' to 'Deny_All_Group'...
-[-] Done
+Enter password for user "admin": 
+[-] (firewall01) Added IP 'x.x.x.x' to firewall group 'Deny_All_Group'
 ```
 
 
