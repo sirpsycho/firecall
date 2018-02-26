@@ -1,0 +1,73 @@
+
+########################################
+##                                    ##
+##  CONFIGURE THE FOLLOWING OPTIONS:  ##
+##                                    ##
+########################################
+
+
+
+### SSH Configuration ###
+
+# Enter one or more firewall addresses (ex. "192.168.0.1" ex. "firewall1,firewall2,firewall3" etc.)
+# Note: If entering more than one, each firewall must be accessible via the same login credentials
+SERVER_LIST=""
+
+# Enter SSH username ("admin", "cisco", etc.)
+SSH_USERNAME="admin"
+
+# (OPTIONAL) Enter SSH password (leave blank to be prompted when you run the script)
+SSH_PASSWORD=""
+
+# (OPTIONAL) Enter SSH private key path (if public key authentication is set up) ex. "/home/user/.ssh/id_rsa"
+SSH_KEY=""
+
+# Enter SSH port (default 22)
+SSH_PORT="22"
+
+
+### Email Configuration ###
+
+# Change this to "yes" to send an email notification each time a block request is sent to firewall(s)
+SEND_EMAIL_ON_BLOCK="no"
+
+# Change this to "yes" to send an email notification each time a firewall block is removed
+SEND_EMAIL_ON_REMOVE="no"
+
+# Sending email address (ex. "sender@mailserver.com")
+EMAIL_FROM=""
+
+# Probably the same as EMAIL_FROM
+EMAIL_USERNAME=""
+
+# Password for the sending email account
+EMAIL_PASSWORD=""
+
+# Email address(es) to send notifications to (for multiple, separate with commas)
+EMAIL_TO=""
+
+# Sending email server address (for gmail, "smtp.gmail.com")
+EMAIL_SERVER="smtp.gmail.com"
+
+# Sending email port number (for gmail, "587")
+EMAIL_PORT="587"
+
+
+
+### Other Options ###
+
+# Enter the name of a group defined within the firewall that blocks access
+# (This group needs to be defined in the FW and applied to an ACL which blocks access)
+FIREWALL_GROUP_NAME="Deny_All_Group"
+
+# Enter whitelist IP address(es) that you never want to accidentally get blocked
+# (comma separated - ex. "1.1.1.1,2.2.2.2,3.3.3.3")
+WHITELIST_IPS=""
+
+# This is a list of hosts that are allowed to request changes to the firewall. This is to be used
+# when these scripts are accepting automated input (non-applicable if running blockip.py manually)
+# ex. "10.0.0.1,10.0.0.2,10.0.0.3"
+ALLOWED_SENDERS=""
+
+# Log file location (leave blank to disable logging)
+LOG_FILE=""

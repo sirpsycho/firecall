@@ -53,6 +53,7 @@ parser.add_option('-d', '--debug',
 parser.set_usage("Usage: python firecall.py -u <user> -s <server> -c <commandstring>")
 options, remainder = parser.parse_args()
 
+# set variables defined in options menu
 username = options.username
 password = options.password
 sshkey = options.sshkey
@@ -65,13 +66,14 @@ except:
 cmdstring = options.cmdstring
 debug = options.debug
 
-
+# this command disables paging on the firewall, so that output is not cut off
 def disable_paging(shell):
     shell.sendall("terminal pager 0\n")
     sleep(0.1)
     output = shell.recv(65535)
     shell.sendall("\n")
 
+# this is the main function that actually sends the command to the firewall
 def exec_cmd(shell, cmd):
     shell.sendall(cmd + '\n')
     sleep(1)
@@ -79,6 +81,7 @@ def exec_cmd(shell, cmd):
     return output
 
 def main(username, password, sshkey, server, port, cmdstring):
+    # make sure all the variables are configured correctly
     if cmdstring == "":
         print("[!] Provide command(s) to run with -c option")
         sys.exit()
@@ -96,8 +99,10 @@ def main(username, password, sshkey, server, port, cmdstring):
         usekey = True
 
     ssh = paramiko.SSHClient()
+    # auto-accept the "save new SSH key???" prompt
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
+    # initiate SSH connection
     try:
         if usekey:
             # Using SSH key
@@ -116,8 +121,25 @@ def main(username, password, sshkey, server, port, cmdstring):
     sshshell = ssh.invoke_shell()
     sleep(0.5)
 
+    # get enable mode
+    sshshell.sendall("\n")
+    sleep(0.1)
+    prompt = sshshell.recv(256)
+    if "> " in prompt:
+        # Low privilege mode detected - try enable command
+        sshshell.sendall("enable\n\n\n\n\n")
+        sleep(0.1)
+        output = sshshell.recv(1024)
+        sshshell.sendall("\n")
+        sleep(0.1)
+        prompt = sshshell.recv(1024)
+        if "> " in prompt:
+            errmsg = "Could not enter enable mode on '%s'" % server
+            return "", errmsg
+
     # disable paging on FW
     disable_paging(sshshell)
+
 
     if debug: print("[-] Sending command string...\n")
     output = exec_cmd(sshshell, cmdstring)
