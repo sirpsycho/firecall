@@ -60,8 +60,8 @@ EMAIL_PORT="587"
 # (This group needs to be defined in the FW and applied to an ACL which blocks access)
 FIREWALL_GROUP_NAME="Deny_All_Group"
 
-# Enter whitelist IP address(es) that you never want to accidentally get blocked
-# (comma separated - ex. "1.1.1.1,2.2.2.2,3.3.3.3")
+# Enter whitelist IP address(es) and/or CIDR ranges that you never want to accidentally get blocked
+# (comma separated - ex. "192.168.0.0/16,8.8.8.8,8.8.4.4")
 WHITELIST_IPS=""
 
 # This is a list of hosts that are allowed to request changes to the firewall. This is to be used

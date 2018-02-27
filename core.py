@@ -8,6 +8,7 @@ import sys
 import os
 import re
 import datetime
+import struct
 import socket
 import getpass
 import subprocess
@@ -65,6 +66,28 @@ def isip(ip):
         return True
     except socket.error:
         return False
+
+# CIDR format compatibility - checks if an IP is in a network
+def addressInNetwork(ip, net_n_bits):
+    ipaddr = struct.unpack('<L', socket.inet_aton(ip))[0]
+    net, bits = net_n_bits.split('/')
+    netaddr = struct.unpack('<L', socket.inet_aton(net))[0]
+    netmask = ((1L << int(bits)) - 1)
+    return ipaddr & netmask == netaddr & netmask
+
+# Check if an IP is in the whitelist
+def in_whitelist(ip, whitelist):
+    # iterate over each of the addresses listed in the whitelist
+    for address in whitelist:
+        if "/" in address:
+            # if a slash is in the address, assume it is a network segment in CIDR notation
+            if addressInNetwork(ip, address):
+                return True
+        else:
+            # if there's no slash, assume it is a single IP address & compare directly
+            if ip == address:
+                return True
+    return False
 
 # When sending email notifications, this function grabs the country code for an IP address
 def get_country(ip):

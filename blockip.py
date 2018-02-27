@@ -76,7 +76,7 @@ def main(blockip):
         write_log("Error - Invalid IP address '%s'" % blockip, logging, logfile)
         sys.exit()
     # make sure the input IP is not whitelisted in the configuration file
-    elif blockip in whitelist:
+    elif in_whitelist(blockip, whitelist):
         print("[!] IP '%s' is whitelisted in 'config'. No actions taken." % blockip)
         write_log("IP '%s' is whitelisted in 'config'. No actions taken." % blockip, logging, logfile)
         sys.exit()
