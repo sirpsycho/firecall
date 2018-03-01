@@ -65,7 +65,7 @@ def main(ip):
     # if logging is enabled, make sure the log file is ready
     init_log(logging, logfile)
     # make sure the configuration file doesn't contain any errors
-    check_config(serverlist, username, password, sshkey, port, fwgroup, whitelist, logfile, sendemail, mailfrom, mailuser, mailpass, mailto, mailserver, mailport)
+    serverlist, username, password, sshkey, port, fwgroup, whitelist, logfile, sendemail, mailfrom, mailuser, mailpass, mailto, mailserver, mailport = check_config(serverlist, username, password, sshkey, port, fwgroup, whitelist, logfile, sendemail, mailfrom, mailuser, mailpass, mailto, mailserver, mailport)
 
     if ip == "-h" or ip == "--help":
         printhelp()

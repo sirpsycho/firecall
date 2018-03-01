@@ -65,7 +65,7 @@ def main(blockip):
     init_log(logging, logfile)
 
     # make sure there are no errors in the configuration file
-    check_config(serverlist, username, password, sshkey, port, fwgroup, whitelist, logfile, sendemail, mailfrom, mailuser, mailpass, mailto, mailserver, mailport)
+    serverlist, username, password, sshkey, port, fwgroup, whitelist, logfile, sendemail, mailfrom, mailuser, mailpass, mailto, mailserver, mailport = check_config(serverlist, username, password, sshkey, port, fwgroup, whitelist, logfile, sendemail, mailfrom, mailuser, mailpass, mailto, mailserver, mailport)
 
     # display help info
     if blockip == "-h" or blockip == "--help":

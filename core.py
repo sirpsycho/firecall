@@ -136,6 +136,7 @@ def check_config(serverlist, username, password, sshkey, port, fwgroup, whitelis
                 password = getpass.getpass('Enter password for user "%s": ' % username)
             except KeyboardInterrupt:
                 sys.exit()
+    return serverlist, username, password, sshkey, port, fwgroup, whitelist, logfile, sendemail, mailfrom, mailuser, mailpass, mailto, mailserver, mailport
 
 # makes sure the log file exists, if applicable
 def init_log(logging, logfile):
