@@ -9,7 +9,8 @@ These scripts are designed to automate sending commands to a Cisco ASA firewall.
 
 # Configuration
 
-Before running any of these scripts, open up "config" in a text editor and configure each value as applicable.  Make sure to enter one or more firewall IP addresses next to "SERVER_LIST" as well as a username, and any other configurations.
+1) Run `bash install.sh` to set helpful aliases and enable logging
+2) Configure "config" in a text editor to add firewall address(es), authentication, & any other applicable options such as:
 
 - add multiple firewalls to configure them all simultaneously
 - configure email alerting to be alerted when an IP is blocked or un-blocked
@@ -18,13 +19,9 @@ Before running any of these scripts, open up "config" in a text editor and confi
 
 # blockip
 
-The "blockip.py" script is designed to quickly block a host by simply providing the IP address (Usage: `python blockip.py <ip-address>`). 
+The "blockip" script is designed to quickly block a host by simply providing the IP address. 
 
-Optionally, to further simplify blocking an IP, you can create an alias:
-
-`echo 'alias blockip="python /full/path/to/blockip.py"' >> ~/.bashrc`
-
-This way, you can just type `blockip` and then the ip address that you want to block.
+Just type `blockip` and then the ip address that you want to block.
 
 Example usage:
 ```
@@ -34,10 +31,6 @@ Example usage:
 # removeip
 
 This script works in the same way as blockip, except it removes an IP block from the firewall.  It can be used to quickly "undo" a block made by blockip.
-
-In the same way as above, you can create an alias to make this easier:
-
-`echo 'alias removeip="python /full/path/to/removeip.py"' >> ~/.bashrc`
 
 Example usage:
 ```
