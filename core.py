@@ -142,7 +142,7 @@ def init_log(logging, logfile):
     if logging:
         if not os.path.isfile(logfile):
             try:
-                write_log("Created log file", logging)
+                write_log("Created log file", logging, logfile)
             except:
                 print("[!] Error - Could not create log file at '%s'" % logfile)
                 raise
