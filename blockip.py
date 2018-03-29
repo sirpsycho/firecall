@@ -12,7 +12,7 @@ def printhelp():
 
 # Check to see if the IP is already blocked
 def alreadyBlocked(blockip, server):
-    cmdstring = "sh run object-group id %s" % fwgroup
+    cmdstring = "sh run object-group id %s | inc _%s_" % (fwgroup, blockip)
     output, errmsg = firecall.main(username, password, sshkey, server, port, cmdstring)
     if "AUTOADD_%s_" % blockip in output:
         return True
