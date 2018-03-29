@@ -75,10 +75,15 @@ def disable_paging(shell):
 
 # this is the main function that actually sends the command to the firewall
 def exec_cmd(shell, cmd):
-    shell.sendall(cmd + '\n')
-    sleep(1)
-    output = shell.recv(65535)
-    return output
+    # Send command, plus "show hostname" command
+    shell.sendall(cmd + '\nshow hostname\n')
+    output = ""
+    while True:
+        sleep(0.1)
+        output += shell.recv(65535)
+        # if "show hostname" appears in output, we know that the command is finished running
+        if "show hostname" in output:
+            return output
 
 def main(username, password, sshkey, server, port, cmdstring):
     # make sure all the variables are configured correctly
